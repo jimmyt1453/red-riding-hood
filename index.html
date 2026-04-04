@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Red Riding Hood: Granny Rescue</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Nunito:wght@400;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <canvas id="gameCanvas" aria-label="Red Riding Hood game view"></canvas>
+
+      <div id="hud" class="hud hidden">
+        <div class="hud-top">
+          <div class="hud-pill"><span>Stage</span><strong id="stageName">1</strong></div>
+          <div class="hud-pill"><span>Difficulty</span><strong id="difficultyName">Easy</strong></div>
+          <div class="hud-pill"><span>Wolves</span><strong id="wolfCount">0</strong></div>
+          <div id="bossHud" class="hud-pill boss-pill hidden">
+            <span>Boss</span>
+            <div class="boss-bar"><div id="bossBarFill"></div></div>
+          </div>
+        </div>
+
+        <div class="hud-bottom">
+          <div class="status-card">
+            <label>Health</label>
+            <div class="meter"><div id="healthFill"></div></div>
+            <strong id="healthText">100 / 100</strong>
+          </div>
+          <div class="status-card">
+            <label>Spark Charge</label>
+            <div class="meter cool"><div id="cooldownFill"></div></div>
+            <strong id="cooldownText">Ready</strong>
+          </div>
+          <div class="status-card story-note" id="objectiveText">
+            Clear the forest trail and reach the lantern gate.
+          </div>
+        </div>
+        <div class="crosshair" aria-hidden="true"></div>
+      </div>
+
+      <div id="titleScreen" class="overlay active">
+        <div class="title-layout">
+          <section class="hero-panel">
+            <p class="eyebrow">Storybook Paint Sample</p>
+            <h1>Red Riding Hood: Granny Rescue</h1>
+            <p class="hero-copy">
+              A kid-friendly fairy-tale shooter where Little Red blasts runaway wolves
+              with sparkling magic and saves Granny from the Big Bad Boss.
+            </p>
+
+            <div class="launch-panel">
+              <div class="launch-copy">
+                <p class="label">Choose level</p>
+                <p class="launch-note">Pick a level, then hit the gold button to jump straight into the forest.</p>
+              </div>
+              <div class="difficulty-grid" id="difficultyButtons">
+                <button class="difficulty active" data-difficulty="easy">Easy</button>
+                <button class="difficulty" data-difficulty="normal">Normal</button>
+                <button class="difficulty" data-difficulty="nightmare">Nightmare</button>
+              </div>
+              <button
+                id="startButtonHero"
+                class="hero-start-button"
+                type="button"
+                onclick="window.startSelectedGame && window.startSelectedGame()"
+              >
+                Start The Rescue
+              </button>
+            </div>
+
+            <div class="controls-copy">
+              <p><strong>Desktop:</strong> `WASD` move, mouse aim, click or `Space` to shoot, `P` pause.</p>
+              <p><strong>Touch:</strong> left pad moves, right pad turns, tap the spark button to fire.</p>
+            </div>
+
+            <div class="cta-row">
+              <button id="howToButton" class="ghost-button">Story Brief</button>
+            </div>
+          </section>
+
+          <aside class="sample-panel">
+            <div class="sample-intro">
+              <p class="eyebrow">Visual Style Samples</p>
+              <p>Three directions are shown here. The playable build uses the first one by default.</p>
+            </div>
+
+            <div class="sample-list">
+              <article class="sample-card selected">
+                <div class="sample-art art-storybook"></div>
+                <div>
+                  <h2>Storybook Paint</h2>
+                  <p>Warm watercolor woods, soft lantern glow, mossy ruins, and glittering spark shots.</p>
+                </div>
+              </article>
+
+              <article class="sample-card">
+                <div class="sample-art art-cartoon"></div>
+                <div>
+                  <h2>Cartoon Action</h2>
+                  <p>Bold outlines, brighter contrast, and punchier arcade energy for future variants.</p>
+                </div>
+              </article>
+
+              <article class="sample-card">
+                <div class="sample-art art-paper"></div>
+                <div>
+                  <h2>Paper Theater</h2>
+                  <p>Cut-paper layers, shadow-box depth, and a handcrafted fairy-tale stage feel.</p>
+                </div>
+              </article>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <div id="storyModal" class="overlay panel-overlay hidden">
+        <div class="panel-card">
+          <p class="eyebrow">Story Brief</p>
+          <h2>Three stages to save Granny</h2>
+          <p>
+            Wolves have stormed the forest path and hidden Granny inside the Big Bad Wolf's lair.
+            Clear the trail, survive the ruins, and defeat the final boss to rescue her.
+          </p>
+          <ul>
+            <li>Stage 1: Forest trail tutorial and first wolf pack.</li>
+            <li>Stage 2: Lantern ruins with tougher ambushes and faster enemies.</li>
+            <li>Stage 3: The lair where the Big Bad Boss guards Granny.</li>
+          </ul>
+          <button id="closeStoryButton" class="primary-button">Back</button>
+        </div>
+      </div>
+
+      <div id="transitionScreen" class="overlay panel-overlay hidden">
+        <div class="panel-card transition-card">
+          <p class="eyebrow">Stage Complete</p>
+          <h2 id="transitionTitle">Into the deeper woods...</h2>
+          <p id="transitionBody"></p>
+          <button id="nextStageButton" class="primary-button">Continue</button>
+        </div>
+      </div>
+
+      <div id="pauseScreen" class="overlay panel-overlay hidden">
+        <div class="panel-card">
+          <p class="eyebrow">Paused</p>
+          <h2>Catch your breath</h2>
+          <p>Little Red is hiding behind the lantern glow. Resume when you're ready.</p>
+          <div class="cta-row">
+            <button id="resumeButton" class="primary-button">Resume</button>
+            <button id="restartButtonPause" class="ghost-button">Restart</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="gameOverScreen" class="overlay panel-overlay hidden">
+        <div class="panel-card">
+          <p class="eyebrow" id="endEyebrow">The forest is quiet</p>
+          <h2 id="endTitle">Granny Saved</h2>
+          <p id="endBody"></p>
+          <div class="cta-row">
+            <button id="restartButtonEnd" class="primary-button">Play Again</button>
+            <button id="backToTitleButton" class="ghost-button">Title Screen</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="touchControls" class="touch-controls hidden">
+        <div class="touch-cluster">
+          <button data-touch="forward">▲</button>
+          <div class="touch-row">
+            <button data-touch="left">◀</button>
+            <button data-touch="back">▼</button>
+            <button data-touch="right">▶</button>
+          </div>
+        </div>
+        <div class="touch-cluster right-side">
+          <div class="touch-row">
+            <button data-touch="turnLeft">⟲</button>
+            <button data-touch="turnRight">⟳</button>
+          </div>
+          <button class="fire-button" data-touch="shoot">Spark</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./js/game.bundle.js"></script>
+  </body>
+</html>
