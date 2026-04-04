@@ -28,6 +28,60 @@ const DIFFICULTIES = {
   },
 };
 
+const VISUAL_STYLES = {
+  storybook: {
+    label: "Storybook Paint",
+    stagePalettes: {
+      "forest-trail": { sky: ["#f5ab82", "#db7856", "#30433d"], floor: ["#2a3a33", "#1d2724"] },
+      "lantern-ruins": { sky: ["#e38b70", "#8c5e55", "#202828"], floor: ["#465348", "#232d2b"] },
+      "boss-lair": { sky: ["#62394a", "#2c2834", "#121215"], floor: ["#403235", "#1f1d22"] },
+    },
+    walls: {
+      "forest-trail": { barkA: "#65503a", barkB: "#57412f", trunkA: "#8a6d4c", trunkB: "#745a3d", leafA: "#6f8858", leafB: "#5d734a" },
+      "lantern-ruins": { barkA: "#64584d", barkB: "#55493f", trunkA: "#8d8377", trunkB: "#70665e", leafA: "#566a58", leafB: "#475748" },
+      "boss-lair": { barkA: "#614853", barkB: "#4f3b44", trunkA: "#7d5e6d", trunkB: "#674d5a", leafA: "#47353f", leafB: "#392b34" },
+    },
+    wolf: { body: "#81685d", bossBody: "#6c5660", mane: "#ead4b8", bossMane: "#d5a56f", eye: "#fff5e4", bossEye: "#ffd38d" },
+    prop: { trunk: "#6b4f37", treeLeaf: "#6f8d5b", mushroomCap: "#cf5a4d", mushroomStem: "#f7ead0" },
+    minimap: { wall: "rgba(69, 98, 67, 0.9)", empty: "rgba(99, 136, 92, 0.08)", wolf: "#ff8d7a", boss: "#ffd38d", gate: "rgba(255, 217, 126, 0.95)", hint: "rgba(255, 243, 186, 0.95)" },
+    sparkle: "rgba(255, 239, 200, 0.08)",
+  },
+  cartoon: {
+    label: "Cartoon Action",
+    stagePalettes: {
+      "forest-trail": { sky: ["#ffd074", "#ff8f54", "#2d4f86"], floor: ["#3a7546", "#21462c"] },
+      "lantern-ruins": { sky: ["#ffc064", "#ff6f52", "#334a77"], floor: ["#5a7760", "#2a3d35"] },
+      "boss-lair": { sky: ["#ff8a7a", "#7a468d", "#171d40"], floor: ["#4b445d", "#24273a"] },
+    },
+    walls: {
+      "forest-trail": { barkA: "#7c492e", barkB: "#64381f", trunkA: "#b56f3f", trunkB: "#95592d", leafA: "#65b954", leafB: "#3f9d41" },
+      "lantern-ruins": { barkA: "#7b614c", barkB: "#674e39", trunkA: "#ae9477", trunkB: "#8f765d", leafA: "#72a365", leafB: "#548553" },
+      "boss-lair": { barkA: "#734260", barkB: "#5c314b", trunkA: "#a86b94", trunkB: "#864f72", leafA: "#5f3e73", leafB: "#482d5d" },
+    },
+    wolf: { body: "#8f6d5f", bossBody: "#7b5878", mane: "#ffe4a7", bossMane: "#ffcc68", eye: "#fff8e5", bossEye: "#fff4a0" },
+    prop: { trunk: "#7b5033", treeLeaf: "#67ba54", mushroomCap: "#ff6358", mushroomStem: "#fff0d7" },
+    minimap: { wall: "rgba(77, 126, 72, 0.95)", empty: "rgba(111, 177, 104, 0.1)", wolf: "#ff6e57", boss: "#ffe47c", gate: "rgba(255, 228, 124, 0.98)", hint: "rgba(255, 248, 162, 0.98)" },
+    sparkle: "rgba(255, 248, 197, 0.14)",
+  },
+  paper: {
+    label: "Paper Theater",
+    stagePalettes: {
+      "forest-trail": { sky: ["#d6b291", "#8f7a6a", "#314746"], floor: ["#55665c", "#2d3b39"] },
+      "lantern-ruins": { sky: ["#c49d85", "#76685f", "#263335"], floor: ["#62645b", "#353b38"] },
+      "boss-lair": { sky: ["#8d6771", "#544756", "#1a1820"], floor: ["#514750", "#29262d"] },
+    },
+    walls: {
+      "forest-trail": { barkA: "#6e5846", barkB: "#584536", trunkA: "#8a745f", trunkB: "#705c49", leafA: "#72806d", leafB: "#5f6b58" },
+      "lantern-ruins": { barkA: "#6a6258", barkB: "#565047", trunkA: "#8a8278", trunkB: "#6f685f", leafA: "#73786d", leafB: "#5e6458" },
+      "boss-lair": { barkA: "#64565f", barkB: "#51454c", trunkA: "#88717f", trunkB: "#6d5a66", leafA: "#4c434c", leafB: "#3f3640" },
+    },
+    wolf: { body: "#7f7269", bossBody: "#6f6473", mane: "#e7d8c1", bossMane: "#cab495", eye: "#faf0e4", bossEye: "#f9dea8" },
+    prop: { trunk: "#6c5947", treeLeaf: "#75806f", mushroomCap: "#b35e53", mushroomStem: "#f2e4d0" },
+    minimap: { wall: "rgba(97, 106, 94, 0.95)", empty: "rgba(143, 152, 136, 0.08)", wolf: "#d58476", boss: "#f2cd97", gate: "rgba(242, 205, 151, 0.95)", hint: "rgba(248, 233, 196, 0.95)" },
+    sparkle: "rgba(255, 241, 203, 0.05)",
+  },
+};
+
 const STAGES = [
   {
     key: "forest-trail",
@@ -171,6 +225,7 @@ const MOVE_SPEED = 2.5;
 const TURN_SPEED = 2.5;
 const PLAYER_RADIUS = 0.22;
 const TAU = Math.PI * 2;
+const FRAME_TIME = 1000 / 60;
 
 class Renderer {
   constructor(canvas) {
@@ -199,16 +254,17 @@ class Renderer {
     const sliceWidth = width / rayCount;
     const depthBuffer = new Array(rayCount);
 
+    const stagePalette = game.getStagePalette();
     const sky = ctx.createLinearGradient(0, 0, 0, halfHeight);
-    sky.addColorStop(0, stage.sky[0]);
-    sky.addColorStop(0.5, stage.sky[1]);
-    sky.addColorStop(1, stage.sky[2]);
+    sky.addColorStop(0, stagePalette.sky[0]);
+    sky.addColorStop(0.5, stagePalette.sky[1]);
+    sky.addColorStop(1, stagePalette.sky[2]);
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, width, halfHeight);
 
     const floor = ctx.createLinearGradient(0, halfHeight, 0, height);
-    floor.addColorStop(0, stage.floor[0]);
-    floor.addColorStop(1, stage.floor[1]);
+    floor.addColorStop(0, stagePalette.floor[0]);
+    floor.addColorStop(1, stagePalette.floor[1]);
     ctx.fillStyle = floor;
     ctx.fillRect(0, halfHeight, width, halfHeight);
 
@@ -217,7 +273,7 @@ class Renderer {
     for (let column = 0; column < rayCount; column += 1) {
       const cameraX = (column / rayCount) * 2 - 1;
       const rayAngle = player.angle + cameraX * (fov / 2);
-      const ray = castRay(stage.map, player.x, player.y, rayAngle, stage);
+      const ray = castRay(stage.map, player.x, player.y, rayAngle, stage, game.visualStyle);
       const correctedDistance = ray.distance * Math.cos(rayAngle - player.angle);
       depthBuffer[column] = correctedDistance;
 
@@ -225,7 +281,7 @@ class Renderer {
       const y = halfHeight - wallHeight / 2;
       const shade = Math.max(0.24, 1 - correctedDistance / 14);
       const wallX = column * sliceWidth;
-      drawForestWallSlice(ctx, stage, ray, wallX, y, sliceWidth + 1, wallHeight, shade);
+      drawForestWallSlice(ctx, stage, ray, wallX, y, sliceWidth + 1, wallHeight, shade, game.visualStyle);
       const bevel = Math.max(0.12, shade - 0.12);
       ctx.fillStyle = shadeColor(ray.trunkColor, bevel);
       ctx.fillRect(wallX, y, 1, wallHeight);
@@ -298,11 +354,11 @@ class Renderer {
         if (!visible) return;
 
         if (sprite.type === "wolf" || sprite.type === "boss") {
-          drawWolfSprite(ctx, sprite, left, top, size);
+          drawWolfSprite(ctx, sprite, left, top, size, game.visualStyle);
         } else if (sprite.type === "tree" || sprite.type === "mushroom" || sprite.type === "gate") {
-          drawForestPropSprite(ctx, sprite, left, top, size);
+          drawForestPropSprite(ctx, sprite, left, top, size, game.visualStyle);
         } else if (sprite.type === "health" || sprite.type === "spark") {
-          drawPickupSprite(ctx, sprite, left, top + size * 0.15, size * 0.55);
+          drawPickupSprite(ctx, sprite, left, top + size * 0.15, size * 0.55, game.visualStyle);
         }
       });
   }
@@ -359,7 +415,7 @@ class Renderer {
     for (let y = 0; y < map.length; y += 1) {
       for (let x = 0; x < map[y].length; x += 1) {
         const tile = map[y][x];
-        ctx.fillStyle = tile === "#" ? "rgba(69, 98, 67, 0.9)" : "rgba(99, 136, 92, 0.08)";
+        ctx.fillStyle = tile === "#" ? game.visualStyle.minimap.wall : game.visualStyle.minimap.empty;
         if (tile === "E") {
           ctx.fillStyle = "rgba(255, 210, 134, 0.85)";
         }
@@ -375,11 +431,11 @@ class Renderer {
     if (game.stageGate) {
       const gateX = startX + game.stageGate.x * scale;
       const gateY = startY + game.stageGate.y * scale;
-      ctx.fillStyle = "rgba(255, 217, 126, 0.95)";
+      ctx.fillStyle = game.visualStyle.minimap.gate;
       ctx.fillRect(gateX - 3, gateY - 5, 6, 10);
       ctx.beginPath();
       ctx.arc(gateX, gateY - 5, 5, Math.PI, 0);
-      ctx.strokeStyle = "rgba(255, 217, 126, 0.95)";
+      ctx.strokeStyle = game.visualStyle.minimap.gate;
       ctx.lineWidth = 2;
       ctx.stroke();
     }
@@ -387,12 +443,12 @@ class Renderer {
     if (game.lastWolfHint) {
       const hintX = startX + game.lastWolfHint.x * scale;
       const hintY = startY + game.lastWolfHint.y * scale;
-      ctx.strokeStyle = "rgba(255, 243, 186, 0.95)";
+      ctx.strokeStyle = game.visualStyle.minimap.hint;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(hintX, hintY, 9, 0, TAU);
       ctx.stroke();
-      ctx.strokeStyle = "rgba(255, 243, 186, 0.45)";
+      ctx.strokeStyle = game.visualStyle.minimap.hint.replace("0.95", "0.45").replace("0.98", "0.45");
       ctx.beginPath();
       ctx.arc(hintX, hintY, 13, 0, TAU);
       ctx.stroke();
@@ -401,7 +457,7 @@ class Renderer {
     game.enemies
       .filter((enemy) => enemy.alive)
       .forEach((enemy) => {
-        ctx.fillStyle = enemy.type === "boss" ? "#ffd38d" : "#ff8d7a";
+        ctx.fillStyle = enemy.type === "boss" ? game.visualStyle.minimap.boss : game.visualStyle.minimap.wolf;
         ctx.beginPath();
         ctx.arc(startX + enemy.x * scale, startY + enemy.y * scale, enemy.type === "boss" ? 3.6 : 2.6, 0, TAU);
         ctx.fill();
@@ -431,6 +487,8 @@ class Game {
     this.paused = false;
     this.difficultyKey = "easy";
     this.difficulty = DIFFICULTIES.easy;
+    this.styleKey = "storybook";
+    this.visualStyle = VISUAL_STYLES.storybook;
     this.stageIndex = 0;
     this.lastTime = 0;
     this.keys = new Set();
@@ -479,6 +537,18 @@ class Game {
   setDifficulty(key) {
     this.difficultyKey = key;
     this.difficulty = DIFFICULTIES[key];
+  }
+
+  setStyle(key) {
+    this.styleKey = key;
+    this.visualStyle = VISUAL_STYLES[key] || VISUAL_STYLES.storybook;
+  }
+
+  getStagePalette() {
+    return this.visualStyle.stagePalettes[this.currentStage.key] || {
+      sky: this.currentStage.sky,
+      floor: this.currentStage.floor,
+    };
   }
 
   start() {
@@ -661,6 +731,10 @@ class Game {
 
   loop(time) {
     if (!this.running) return;
+    if (time - this.lastTime < FRAME_TIME) {
+      requestAnimationFrame((nextTime) => this.loop(nextTime));
+      return;
+    }
     const delta = Math.min(0.033, (time - this.lastTime) / 1000);
     this.lastTime = time;
 
@@ -930,7 +1004,7 @@ class Game {
   }
 }
 
-function castRay(map, startX, startY, angle, stage) {
+function castRay(map, startX, startY, angle, stage, visualStyle) {
   const step = 0.02;
   let distance = 0;
   let hit = false;
@@ -945,36 +1019,21 @@ function castRay(map, startX, startY, angle, stage) {
     distance += step;
   }
 
-  return pickWallStyle(stage, distance, x, y);
+  return pickWallStyle(stage, distance, x, y, visualStyle);
 }
 
-function pickWallStyle(stage, distance, x, y) {
+function pickWallStyle(stage, distance, x, y, visualStyle) {
   const vertical = Math.abs(x - Math.round(x)) < Math.abs(y - Math.round(y));
-  if (stage.key === "boss-lair") {
-    return {
-      distance,
-      barkColor: vertical ? "#614853" : "#4f3b44",
-      trunkColor: vertical ? "#7d5e6d" : "#674d5a",
-      leafColor: vertical ? "#47353f" : "#392b34",
-    };
-  }
-  if (stage.key === "lantern-ruins") {
-    return {
-      distance,
-      barkColor: vertical ? "#64584d" : "#55493f",
-      trunkColor: vertical ? "#8d8377" : "#70665e",
-      leafColor: vertical ? "#566a58" : "#475748",
-    };
-  }
+  const palette = visualStyle.walls[stage.key];
   return {
     distance,
-    barkColor: vertical ? "#65503a" : "#57412f",
-    trunkColor: vertical ? "#8a6d4c" : "#745a3d",
-    leafColor: vertical ? "#6f8858" : "#5d734a",
+    barkColor: vertical ? palette.barkA : palette.barkB,
+    trunkColor: vertical ? palette.trunkA : palette.trunkB,
+    leafColor: vertical ? palette.leafA : palette.leafB,
   };
 }
 
-function drawForestWallSlice(ctx, stage, ray, x, y, width, height, shade) {
+function drawForestWallSlice(ctx, stage, ray, x, y, width, height, shade, visualStyle) {
   const canopyHeight = stage.key === "boss-lair" ? height * 0.18 : height * 0.28;
   const trunkHeight = height - canopyHeight;
   ctx.fillStyle = shadeColor(ray.trunkColor, shade);
@@ -989,7 +1048,7 @@ function drawForestWallSlice(ctx, stage, ray, x, y, width, height, shade) {
   ctx.fillStyle = shadeColor(ray.leafColor, Math.min(1, shade * 1.18));
   ctx.fillRect(x, y + canopyHeight * 0.18, width, canopyHeight * 0.18);
 
-  ctx.fillStyle = "rgba(255, 239, 200, 0.08)";
+  ctx.fillStyle = visualStyle.sparkle;
   ctx.fillRect(x, y + canopyHeight * 0.08, width, Math.max(1, canopyHeight * 0.06));
 }
 
@@ -1002,12 +1061,12 @@ function shadeColor(hex, shade) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-function drawWolfSprite(ctx, sprite, left, top, size) {
+function drawWolfSprite(ctx, sprite, left, top, size, visualStyle) {
   const earWiggle = sprite.type === "boss" ? 1.1 : 1;
-  const bodyColor = sprite.type === "boss" ? "#6c5660" : "#81685d";
-  const maneColor = sprite.type === "boss" ? "#d5a56f" : "#ead4b8";
+  const bodyColor = sprite.type === "boss" ? visualStyle.wolf.bossBody : visualStyle.wolf.body;
+  const maneColor = sprite.type === "boss" ? visualStyle.wolf.bossMane : visualStyle.wolf.mane;
   const glow = sprite.hitTimer > 0 ? "rgba(255, 226, 150, 0.45)" : "rgba(0, 0, 0, 0.18)";
-  const eyeColor = sprite.type === "boss" ? "#ffd38d" : "#fff5e4";
+  const eyeColor = sprite.type === "boss" ? visualStyle.wolf.bossEye : visualStyle.wolf.eye;
 
   ctx.save();
   ctx.translate(left, top);
@@ -1065,7 +1124,7 @@ function drawWolfSprite(ctx, sprite, left, top, size) {
   ctx.restore();
 }
 
-function drawPickupSprite(ctx, sprite, left, top, size) {
+function drawPickupSprite(ctx, sprite, left, top, size, visualStyle) {
   ctx.save();
   ctx.translate(left, top);
   if (sprite.type === "health") {
@@ -1077,7 +1136,7 @@ function drawPickupSprite(ctx, sprite, left, top, size) {
     ctx.fillRect(size * 0.42, size * 0.24, size * 0.16, size * 0.52);
     ctx.fillRect(size * 0.24, size * 0.42, size * 0.52, size * 0.16);
   } else {
-    ctx.fillStyle = "rgba(173, 243, 255, 0.18)";
+    ctx.fillStyle = visualStyle === VISUAL_STYLES.cartoon ? "rgba(173, 243, 255, 0.3)" : "rgba(173, 243, 255, 0.18)";
     ctx.beginPath();
     ctx.arc(size * 0.5, size * 0.5, size * 0.3, 0, TAU);
     ctx.fill();
@@ -1095,7 +1154,7 @@ function drawPickupSprite(ctx, sprite, left, top, size) {
   ctx.restore();
 }
 
-function drawForestPropSprite(ctx, sprite, left, top, size) {
+function drawForestPropSprite(ctx, sprite, left, top, size, visualStyle) {
   ctx.save();
   ctx.translate(left, top);
 
@@ -1106,10 +1165,10 @@ function drawForestPropSprite(ctx, sprite, left, top, size) {
     ctx.ellipse(size * 0.5, size * 0.86, size * 0.18, size * 0.06, 0, 0, TAU);
     ctx.fill();
 
-    ctx.fillStyle = "#6b4f37";
+    ctx.fillStyle = visualStyle.prop.trunk;
     ctx.fillRect(size * 0.42, size * 0.42, size * 0.16, size * 0.38);
 
-    ctx.fillStyle = "#6f8d5b";
+    ctx.fillStyle = visualStyle.prop.treeLeaf;
     ctx.beginPath();
     ctx.arc(size * 0.5, size * 0.4, canopy, 0, TAU);
     ctx.arc(size * 0.38, size * 0.5, canopy * 0.72, 0, TAU);
@@ -1126,9 +1185,9 @@ function drawForestPropSprite(ctx, sprite, left, top, size) {
     ctx.ellipse(size * 0.5, size * 0.76, size * 0.14, size * 0.05, 0, 0, TAU);
     ctx.fill();
 
-    ctx.fillStyle = "#f7ead0";
+    ctx.fillStyle = visualStyle.prop.mushroomStem;
     ctx.fillRect(size * 0.45, size * 0.48, size * 0.1, size * 0.22);
-    ctx.fillStyle = "#cf5a4d";
+    ctx.fillStyle = visualStyle.prop.mushroomCap;
     ctx.beginPath();
     ctx.arc(size * 0.5, size * 0.46, size * 0.18, Math.PI, 0);
     ctx.closePath();
@@ -1145,7 +1204,7 @@ function drawForestPropSprite(ctx, sprite, left, top, size) {
     ctx.ellipse(size * 0.5, size * 0.66, size * 0.28, size * 0.12, 0, 0, TAU);
     ctx.fill();
 
-    ctx.strokeStyle = "#ffd17b";
+    ctx.strokeStyle = visualStyle.minimap.gate;
     ctx.lineWidth = Math.max(2, size * 0.02);
     ctx.beginPath();
     ctx.moveTo(size * 0.3, size * 0.68);
@@ -1154,7 +1213,7 @@ function drawForestPropSprite(ctx, sprite, left, top, size) {
     ctx.lineTo(size * 0.7, size * 0.68);
     ctx.stroke();
 
-    ctx.fillStyle = "rgba(255, 227, 160, 0.22)";
+    ctx.fillStyle = visualStyle === VISUAL_STYLES.cartoon ? "rgba(255, 232, 110, 0.28)" : "rgba(255, 227, 160, 0.22)";
     ctx.fillRect(size * 0.34, size * 0.3, size * 0.32, size * 0.38);
     ctx.fillStyle = "#ffe7a8";
     ctx.beginPath();
@@ -1195,6 +1254,7 @@ function createUiBindings() {
   const gameOverScreen = document.getElementById("gameOverScreen");
   const touchControls = document.getElementById("touchControls");
   const bossHud = document.getElementById("bossHud");
+  const victoryScene = document.getElementById("victoryScene");
 
   return {
     showTitle() {
@@ -1207,6 +1267,7 @@ function createUiBindings() {
       pauseScreen.classList.remove("active");
       gameOverScreen.classList.add("hidden");
       gameOverScreen.classList.remove("active");
+      victoryScene.classList.add("hidden");
       document.getElementById("storyModal").classList.add("hidden");
       document.getElementById("storyModal").classList.remove("active");
       this.updateTouchVisibility(false);
@@ -1222,6 +1283,7 @@ function createUiBindings() {
       pauseScreen.classList.remove("active");
       gameOverScreen.classList.add("hidden");
       gameOverScreen.classList.remove("active");
+      victoryScene.classList.add("hidden");
       document.getElementById("storyModal").classList.add("hidden");
       document.getElementById("storyModal").classList.remove("active");
       this.updateTouchVisibility(true);
@@ -1283,10 +1345,12 @@ function createUiBindings() {
       const title = document.getElementById("endTitle");
       const body = document.getElementById("endBody");
       if (victory) {
+        victoryScene.classList.remove("hidden");
         eyebrow.textContent = "Granny is safe";
         title.textContent = "The Big Bad Wolf is defeated";
         body.textContent = `Little Red clears all three stages on ${difficulty.label}. Granny steps out of the cottage and the forest glows warm again.`;
       } else {
+        victoryScene.classList.add("hidden");
         eyebrow.textContent = "The wolves push back";
         title.textContent = "Try the rescue again";
         body.textContent = `You made it to ${stageIndex + 1} stage${stageIndex === 0 ? "" : "s"}, but the wolf pack was too strong this time.`;
@@ -1305,12 +1369,22 @@ const renderer = new Renderer(canvas);
 const ui = createUiBindings();
 const game = new Game(renderer, ui);
 let selectedDifficulty = "easy";
+let selectedStyle = "storybook";
 
 document.querySelectorAll("[data-difficulty]").forEach((button) => {
   button.addEventListener("click", () => {
     selectedDifficulty = button.dataset.difficulty;
     document.querySelectorAll("[data-difficulty]").forEach((item) => item.classList.remove("active"));
     button.classList.add("active");
+  });
+});
+
+document.querySelectorAll("[data-style]").forEach((card) => {
+  card.addEventListener("click", () => {
+    selectedStyle = card.dataset.style;
+    document.querySelectorAll("[data-style]").forEach((item) => item.classList.remove("selected"));
+    card.classList.add("selected");
+    game.setStyle(selectedStyle);
   });
 });
 
@@ -1321,6 +1395,7 @@ function startSelectedGame() {
 
   try {
     game.setDifficulty(selectedDifficulty);
+    game.setStyle(selectedStyle);
     game.start();
   } catch (error) {
     console.error(error);
@@ -1389,4 +1464,12 @@ document.querySelectorAll("[data-touch]").forEach((button) => {
 });
 
 ui.updateTouchVisibility();
+game.setStyle(selectedStyle);
 game.showTitle();
+
+const debugMode = new URLSearchParams(window.location.search).get("debug");
+if (debugMode === "win") {
+  game.setDifficulty(selectedDifficulty);
+  game.setStyle(selectedStyle);
+  ui.showEnding(true, 2, game.difficulty);
+}

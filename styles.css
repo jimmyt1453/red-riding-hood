@@ -126,10 +126,18 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(1.8rem, 3vw, 2.8rem);
-  max-width: 12ch;
+  font-size: clamp(2rem, 3.2vw, 3.15rem);
+  max-width: 13.5ch;
   margin-top: 12px;
   line-height: 1.02;
+}
+
+.hero-title {
+  max-width: none;
+}
+
+.hero-title span {
+  display: block;
 }
 
 h2 {
@@ -288,19 +296,42 @@ h2 {
 }
 
 .sample-card {
+  appearance: none;
   display: grid;
   grid-template-columns: 140px 1fr;
   gap: 14px;
   align-items: center;
+  width: 100%;
   padding: 14px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+  color: inherit;
+  text-align: left;
+}
+
+.sample-card h2 {
+  color: var(--ink);
+  font-size: clamp(1.55rem, 2.2vw, 2.15rem);
+  line-height: 0.95;
+}
+
+.sample-card p {
+  color: #dfd4b8;
 }
 
 .sample-card.selected {
   border-color: rgba(255, 211, 141, 0.5);
   box-shadow: inset 0 0 0 1px rgba(255, 211, 141, 0.25);
+}
+
+.sample-card:hover,
+.sample-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(255, 211, 141, 0.24);
+  outline: none;
 }
 
 .sample-art {
@@ -349,6 +380,263 @@ h2 {
 
 .transition-card {
   text-align: center;
+}
+
+.victory-scene {
+  position: relative;
+  margin: 18px 0 10px;
+  height: 220px;
+  border-radius: 24px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(255, 230, 161, 0.28), transparent 24%),
+    linear-gradient(180deg, rgba(141, 91, 82, 0.9) 0%, rgba(66, 90, 76, 0.92) 54%, rgba(25, 34, 33, 0.96) 100%);
+  border: 1px solid rgba(255, 227, 176, 0.14);
+}
+
+.scene-ground {
+  position: absolute;
+  left: -4%;
+  right: -4%;
+  bottom: -18px;
+  height: 78px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(122, 154, 96, 0.9), rgba(63, 90, 58, 0.92) 68%, rgba(39, 53, 40, 0.96));
+}
+
+.hug-glow {
+  position: absolute;
+  left: 50%;
+  bottom: 62px;
+  width: 150px;
+  height: 68px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 222, 147, 0.3), rgba(255, 222, 147, 0));
+  animation: hugGlow 2.8s ease-in-out infinite;
+}
+
+.granny-cottage {
+  position: absolute;
+  right: 24px;
+  bottom: 58px;
+  width: 92px;
+  height: 78px;
+  border-radius: 12px 12px 8px 8px;
+  background: linear-gradient(180deg, #7d5b49, #5b4033);
+  box-shadow: inset 0 -8px 0 rgba(40, 28, 23, 0.25);
+}
+
+.granny-cottage::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: -24px;
+  height: 34px;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, #a15a49, #794037);
+}
+
+.granny-cottage::after {
+  content: "";
+  position: absolute;
+  left: 32px;
+  top: 24px;
+  width: 28px;
+  height: 24px;
+  border-radius: 8px;
+  background: rgba(255, 227, 152, 0.78);
+  box-shadow: 0 0 18px rgba(255, 220, 124, 0.35);
+}
+
+.character {
+  position: absolute;
+  bottom: 56px;
+  width: 78px;
+  height: 132px;
+  transform-origin: bottom center;
+}
+
+.character .head,
+.character .body,
+.character .hood,
+.character .arm {
+  position: absolute;
+}
+
+.character.granny {
+  left: calc(50% - 44px);
+  animation: grannySway 3s ease-in-out infinite;
+}
+
+.character.granny .head {
+  left: 24px;
+  top: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f4dbc1;
+  box-shadow: inset 0 -3px 0 rgba(199, 175, 151, 0.3);
+}
+
+.character.granny .body {
+  left: 17px;
+  top: 34px;
+  width: 42px;
+  height: 64px;
+  border-radius: 20px 20px 16px 16px;
+  background: linear-gradient(180deg, #91a0bf, #6f7e9c);
+}
+
+.character.granny .arm {
+  top: 46px;
+  width: 32px;
+  height: 12px;
+  border-radius: 999px;
+  background: #f4dbc1;
+}
+
+.character.granny .arm-left {
+  left: 8px;
+  transform: rotate(26deg);
+}
+
+.character.granny .arm-right {
+  right: 2px;
+  transform: rotate(-28deg);
+}
+
+.character.red {
+  left: calc(50% - 4px);
+  animation: redBounce 3s ease-in-out infinite;
+}
+
+.character.red .hood {
+  left: 18px;
+  top: 6px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50% 50% 46% 46%;
+  background: linear-gradient(180deg, #d75545, #b73d33);
+}
+
+.character.red .body {
+  left: 14px;
+  top: 32px;
+  width: 40px;
+  height: 66px;
+  border-radius: 18px 18px 14px 14px;
+  background: linear-gradient(180deg, #d75545, #9f2f29);
+}
+
+.character.red .arm {
+  top: 46px;
+  width: 30px;
+  height: 12px;
+  border-radius: 999px;
+  background: #f1d6ba;
+}
+
+.character.red .arm-left {
+  left: 0;
+  transform: rotate(-34deg);
+}
+
+.character.red .arm-right {
+  right: 6px;
+  transform: rotate(34deg);
+}
+
+.heart,
+.spark {
+  position: absolute;
+  opacity: 0;
+}
+
+.heart {
+  left: 50%;
+  bottom: 146px;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  background: #ffb2ad;
+  transform: rotate(45deg);
+  animation: heartRise 2.8s ease-in-out infinite;
+}
+
+.heart::before,
+.heart::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffb2ad;
+}
+
+.heart::before {
+  left: -9px;
+}
+
+.heart::after {
+  top: -9px;
+}
+
+.heart-two {
+  animation-delay: 1.2s;
+}
+
+.spark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 233, 158, 0.9);
+  box-shadow: 0 0 12px rgba(255, 233, 158, 0.4);
+  animation: sparkleFloat 2.4s ease-in-out infinite;
+}
+
+.spark-one {
+  left: calc(50% - 58px);
+  bottom: 132px;
+}
+
+.spark-two {
+  left: calc(50% + 44px);
+  bottom: 152px;
+  animation-delay: 0.8s;
+}
+
+.spark-three {
+  left: calc(50% + 6px);
+  bottom: 174px;
+  animation-delay: 1.4s;
+}
+
+@keyframes redBounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(1deg); }
+}
+
+@keyframes grannySway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-1deg); }
+}
+
+@keyframes heartRise {
+  0% { opacity: 0; transform: translateY(0) rotate(45deg) scale(0.7); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-34px) rotate(45deg) scale(1.05); }
+}
+
+@keyframes sparkleFloat {
+  0%, 100% { opacity: 0.15; transform: translateY(0) scale(0.8); }
+  50% { opacity: 1; transform: translateY(-10px) scale(1.1); }
+}
+
+@keyframes hugGlow {
+  0%, 100% { opacity: 0.65; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.08); }
 }
 
 .hud {

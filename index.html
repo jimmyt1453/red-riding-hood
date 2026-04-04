@@ -48,8 +48,10 @@
       <div id="titleScreen" class="overlay active">
         <div class="title-layout">
           <section class="hero-panel">
-            <p class="eyebrow">Storybook Paint Sample</p>
-            <h1>Red Riding Hood: Granny Rescue</h1>
+            <h1 class="hero-title">
+              <span>Red Riding Hood:</span>
+              <span>Granny Rescue</span>
+            </h1>
             <p class="hero-copy">
               A kid-friendly fairy-tale shooter where Little Red blasts runaway wolves
               with sparkling magic and saves Granny from the Big Bad Boss.
@@ -87,34 +89,34 @@
 
           <aside class="sample-panel">
             <div class="sample-intro">
-              <p class="eyebrow">Visual Style Samples</p>
-              <p>Three directions are shown here. The playable build uses the first one by default.</p>
+              <p class="eyebrow">Choose Visual Style</p>
+              <p>Pick the look you want, then start the game.</p>
             </div>
 
             <div class="sample-list">
-              <article class="sample-card selected">
+              <button type="button" class="sample-card selected" data-style="storybook">
                 <div class="sample-art art-storybook"></div>
                 <div>
                   <h2>Storybook Paint</h2>
                   <p>Warm watercolor woods, soft lantern glow, mossy ruins, and glittering spark shots.</p>
                 </div>
-              </article>
+              </button>
 
-              <article class="sample-card">
+              <button type="button" class="sample-card" data-style="cartoon">
                 <div class="sample-art art-cartoon"></div>
                 <div>
                   <h2>Cartoon Action</h2>
-                  <p>Bold outlines, brighter contrast, and punchier arcade energy for future variants.</p>
+                  <p>Bold outlines, brighter contrast, and punchier arcade energy with brighter wolves and bigger color pops.</p>
                 </div>
-              </article>
+              </button>
 
-              <article class="sample-card">
+              <button type="button" class="sample-card" data-style="paper">
                 <div class="sample-art art-paper"></div>
                 <div>
                   <h2>Paper Theater</h2>
-                  <p>Cut-paper layers, shadow-box depth, and a handcrafted fairy-tale stage feel.</p>
+                  <p>Cut-paper layers, shadow-box depth, and a handcrafted fairy-tale stage feel with flatter scenic shapes.</p>
                 </div>
-              </article>
+              </button>
             </div>
           </aside>
         </div>
@@ -162,6 +164,28 @@
         <div class="panel-card">
           <p class="eyebrow" id="endEyebrow">The forest is quiet</p>
           <h2 id="endTitle">Granny Saved</h2>
+          <div id="victoryScene" class="victory-scene hidden" aria-hidden="true">
+            <div class="scene-ground"></div>
+            <div class="hug-glow"></div>
+            <div class="granny-cottage"></div>
+            <div class="character granny">
+              <div class="head"></div>
+              <div class="body"></div>
+              <div class="arm arm-left"></div>
+              <div class="arm arm-right"></div>
+            </div>
+            <div class="character red">
+              <div class="hood"></div>
+              <div class="body"></div>
+              <div class="arm arm-left"></div>
+              <div class="arm arm-right"></div>
+            </div>
+            <div class="heart heart-one"></div>
+            <div class="heart heart-two"></div>
+            <div class="spark spark-one"></div>
+            <div class="spark spark-two"></div>
+            <div class="spark spark-three"></div>
+          </div>
           <p id="endBody"></p>
           <div class="cta-row">
             <button id="restartButtonEnd" class="primary-button">Play Again</button>
