@@ -6,6 +6,20 @@ Repository:
 
 - [https://github.com/jimmyt1453/red-riding-hood](https://github.com/jimmyt1453/red-riding-hood)
 
+## Screenshots
+
+### Title Screen
+
+![Title Screen](./screenshots/title-screen.png)
+
+### Lantern Ruins
+
+![Lantern Ruins](./screenshots/stage-2-ruins.png)
+
+### Nightmare Boss Setup
+
+![Nightmare Boss](./screenshots/nightmare-boss.png)
+
 ## Current Version
 
 - `v0.2`
