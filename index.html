@@ -18,14 +18,18 @@
 
       <div id="hud" class="hud hidden">
         <div class="hud-top">
-          <div class="hud-pill"><span>Stage</span><strong id="stageName">1</strong></div>
+          <div class="hud-pill"><span>Stage</span><strong id="stageName">Forest Trail</strong></div>
           <div class="hud-pill"><span>Difficulty</span><strong id="difficultyName">Easy</strong></div>
           <div class="hud-pill"><span>Wolves</span><strong id="wolfCount">0</strong></div>
+          <div class="hud-pill compact-pill"><span>Score</span><strong id="scoreText">0</strong></div>
+          <div class="hud-pill compact-pill"><span>Time</span><strong id="timerText">00:00</strong></div>
           <div id="bossHud" class="hud-pill boss-pill hidden">
             <span>Boss</span>
             <div class="boss-bar"><div id="bossBarFill"></div></div>
           </div>
         </div>
+
+        <div id="eventBanner" class="event-banner hidden">Stage Clear</div>
 
         <div class="hud-bottom">
           <div class="status-card">
@@ -37,6 +41,15 @@
             <label>Spark Charge</label>
             <div class="meter cool"><div id="cooldownFill"></div></div>
             <strong id="cooldownText">Ready</strong>
+          </div>
+          <div id="shrineCard" class="status-card shrine-card hidden">
+            <label>Lantern Shrines</label>
+            <div class="meter shrine-meter"><div id="shrineFill"></div></div>
+            <strong id="shrineText">0 / 2 Lit</strong>
+          </div>
+          <div id="upgradeHudCard" class="status-card upgrade-hud-card hidden">
+            <label>Active Blessings</label>
+            <div id="upgradeHudList" class="upgrade-hud-list"></div>
           </div>
           <div class="status-card story-note" id="objectiveText">
             Clear the forest trail and reach the lantern gate.
@@ -54,32 +67,52 @@
             </h1>
             <p class="hero-copy">
               A kid-friendly fairy-tale shooter where Little Red blasts runaway wolves
-              with sparkling magic and saves Granny from the Big Bad Boss.
+              with sparkling magic, powers old lantern shrines, and defeats the Big Bad
+              Wolf to save Granny.
             </p>
 
             <div class="launch-panel">
               <div class="launch-copy">
-                <p class="label">Choose level</p>
-                <p class="launch-note">Pick a level, then hit the gold button to jump straight into the forest.</p>
+                <p class="label">Choose Level</p>
+                <p class="launch-note">
+                  Pick a difficulty, choose a visual style, then start the rescue.
+                </p>
               </div>
               <div class="difficulty-grid" id="difficultyButtons">
                 <button class="difficulty active" data-difficulty="easy">Easy</button>
                 <button class="difficulty" data-difficulty="normal">Normal</button>
                 <button class="difficulty" data-difficulty="nightmare">Nightmare</button>
               </div>
-              <button
-                id="startButtonHero"
-                class="hero-start-button"
-                type="button"
-                onclick="window.startSelectedGame && window.startSelectedGame()"
-              >
+              <div class="quality-row" id="qualityButtons">
+                <span class="label">Performance</span>
+                <div class="quality-grid">
+                  <button class="difficulty active" data-quality="balanced">Balanced</button>
+                  <button class="difficulty" data-quality="performance">Performance</button>
+                </div>
+              </div>
+              <button id="startButtonHero" class="hero-start-button" type="button">
                 Start The Rescue
               </button>
+              <div class="record-strip" id="recordStrip">
+                <div class="record-card">
+                  <span class="label">Best Score</span>
+                  <strong id="bestScoreText">0</strong>
+                </div>
+                <div class="record-card">
+                  <span class="label">Best Time</span>
+                  <strong id="bestTimeText">--:--</strong>
+                </div>
+                <div class="record-card">
+                  <span class="label">Cleared</span>
+                  <strong id="clearCountText">0 / 3</strong>
+                </div>
+              </div>
+              <div id="difficultyTracks" class="difficulty-tracks"></div>
             </div>
 
             <div class="controls-copy">
-              <p><strong>Desktop:</strong> `WASD` move, mouse aim, click or `Space` to shoot, `P` pause.</p>
-              <p><strong>Touch:</strong> left pad moves, right pad turns, tap the spark button to fire.</p>
+              <p><strong>Desktop:</strong> `WASD` move, mouse aim, click or `Space` to shoot, `P` or `Esc` pause, `R` restart.</p>
+              <p><strong>Touch:</strong> left joystick moves, right buttons turn, tap the spark button to fire.</p>
             </div>
 
             <div class="cta-row">
@@ -106,7 +139,7 @@
                 <div class="sample-art art-cartoon"></div>
                 <div>
                   <h2>Cartoon Action</h2>
-                  <p>Bold outlines, brighter contrast, and punchier arcade energy with brighter wolves and bigger color pops.</p>
+                  <p>Bold outlines, brighter contrast, and punchier arcade energy with bigger color pops.</p>
                 </div>
               </button>
 
@@ -114,7 +147,7 @@
                 <div class="sample-art art-paper"></div>
                 <div>
                   <h2>Paper Theater</h2>
-                  <p>Cut-paper layers, shadow-box depth, and a handcrafted fairy-tale stage feel with flatter scenic shapes.</p>
+                  <p>Cut-paper layers, shadow-box depth, and a handcrafted fairy-tale stage feel.</p>
                 </div>
               </button>
             </div>
@@ -127,13 +160,14 @@
           <p class="eyebrow">Story Brief</p>
           <h2>Three stages to save Granny</h2>
           <p>
-            Wolves have stormed the forest path and hidden Granny inside the Big Bad Wolf's lair.
-            Clear the trail, survive the ruins, and defeat the final boss to rescue her.
+            Wolves have stormed the forest path and hidden Granny inside the Big Bad
+            Wolf's lair. Clear the trail, relight the lantern shrines in the ruins, and
+            defeat the final boss to rescue her.
           </p>
           <ul>
-            <li>Stage 1: Forest trail tutorial and first wolf pack.</li>
-            <li>Stage 2: Lantern ruins with tougher ambushes and faster enemies.</li>
-            <li>Stage 3: The lair where the Big Bad Boss guards Granny.</li>
+            <li>Stage 1: forest trail tutorial and first wolf pack.</li>
+            <li>Stage 2: lantern ruins with shrines, ambushes, and stronger wolves.</li>
+            <li>Stage 3: the lair where the Big Bad Wolf guards Granny.</li>
           </ul>
           <button id="closeStoryButton" class="primary-button">Back</button>
         </div>
@@ -145,6 +179,17 @@
           <h2 id="transitionTitle">Into the deeper woods...</h2>
           <p id="transitionBody"></p>
           <button id="nextStageButton" class="primary-button">Continue</button>
+        </div>
+      </div>
+
+      <div id="upgradeScreen" class="overlay panel-overlay hidden">
+        <div class="panel-card upgrade-card">
+          <p class="eyebrow">Choose One Blessing</p>
+          <h2>Pick your next rescue upgrade</h2>
+          <p class="upgrade-copy">
+            Each blessing lasts for the rest of this run. Choose carefully before pushing deeper into the woods.
+          </p>
+          <div id="upgradeChoices" class="upgrade-grid"></div>
         </div>
       </div>
 
@@ -161,7 +206,7 @@
       </div>
 
       <div id="gameOverScreen" class="overlay panel-overlay hidden">
-        <div class="panel-card">
+        <div class="panel-card summary-panel">
           <p class="eyebrow" id="endEyebrow">The forest is quiet</p>
           <h2 id="endTitle">Granny Saved</h2>
           <div id="victoryScene" class="victory-scene hidden" aria-hidden="true">
@@ -187,6 +232,14 @@
             <div class="spark spark-three"></div>
           </div>
           <p id="endBody"></p>
+          <div class="summary-medal">
+            <span class="label">Rank Medal</span>
+            <strong id="medalText">Bronze</strong>
+          </div>
+          <div id="recordSummary" class="record-summary hidden"></div>
+          <div id="upgradeSummary" class="upgrade-summary hidden"></div>
+          <div id="bonusSummary" class="bonus-summary"></div>
+          <div id="summaryGrid" class="summary-grid"></div>
           <div class="cta-row">
             <button id="restartButtonEnd" class="primary-button">Play Again</button>
             <button id="backToTitleButton" class="ghost-button">Title Screen</button>
@@ -195,12 +248,10 @@
       </div>
 
       <div id="touchControls" class="touch-controls hidden">
-        <div class="touch-cluster">
-          <button data-touch="forward">▲</button>
-          <div class="touch-row">
-            <button data-touch="left">◀</button>
-            <button data-touch="back">▼</button>
-            <button data-touch="right">▶</button>
+        <div class="touch-joystick">
+          <div class="touch-joystick-label">Move</div>
+          <div id="joystickPad" class="joystick-pad">
+            <div id="joystickKnob" class="joystick-knob"></div>
           </div>
         </div>
         <div class="touch-cluster right-side">
