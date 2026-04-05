@@ -497,11 +497,49 @@ function createScreenFlash(alpha = 0.08, ttl = 0.08, color = "255, 241, 190") {
   return { type: "screenFlash", alpha, ttl, baseColor: color };
 }
 
+class AssetLibrary {
+  constructor() {
+    this.images = new Map();
+    [
+      ["wolf", "./assets/wolf.svg"],
+      ["wolf_brute", "./assets/brute-wolf.svg"],
+      ["boss", "./assets/boss-wolf.svg"],
+      ["wall-forest-trail", "./assets/wall-forest.svg"],
+      ["wall-lantern-ruins", "./assets/wall-ruins.svg"],
+      ["wall-boss-lair", "./assets/wall-lair.svg"],
+      ["floor-forest-trail", "./assets/floor-forest.svg"],
+      ["floor-lantern-ruins", "./assets/floor-ruins.svg"],
+      ["floor-boss-lair", "./assets/floor-lair.svg"],
+      ["shrine-off", "./assets/shrine-off.svg"],
+      ["shrine-on", "./assets/shrine-on.svg"],
+      ["gate", "./assets/gate.svg"],
+      ["health", "./assets/health-pickup.svg"],
+      ["spark", "./assets/spark-pickup.svg"],
+    ].forEach(([key, src]) => {
+      const image = new Image();
+      image.src = src;
+      this.images.set(key, image);
+    });
+  }
+
+  get(key) {
+    const image = this.images.get(key);
+    if (!image || !image.complete || image.naturalWidth === 0) return null;
+    return image;
+  }
+}
+
 class SoundEngine {
   constructor() {
     this.ctx = null;
+    this.masterGain = null;
     this.musicNodes = [];
     this.musicScene = "title";
+    this.musicTimer = 0;
+    this.musicStep = 0;
+    this.noiseBuffer = null;
+    this.unlocked = false;
+    this.unlockPromise = null;
   }
 
   ensure() {
@@ -509,15 +547,49 @@ class SoundEngine {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (!AudioContextClass) return null;
       this.ctx = new AudioContextClass();
-      this.playSceneMusic(this.musicScene);
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.value = 0.82;
+      this.masterGain.connect(this.ctx.destination);
     }
-    if (this.ctx.state === "suspended") this.ctx.resume();
     return this.ctx;
+  }
+
+  async unlock() {
+    if (this.unlockPromise) return this.unlockPromise;
+    this.unlockPromise = (async () => {
+      const ctx = this.ensure();
+      if (!ctx) return null;
+      if (ctx.state === "suspended") {
+        try {
+          await ctx.resume();
+        } catch (error) {
+          return ctx;
+        }
+      }
+      if (ctx.state === "running" && this.masterGain) {
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        oscillator.frequency.setValueAtTime(440, ctx.currentTime);
+        gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
+        oscillator.connect(gainNode);
+        gainNode.connect(this.masterGain);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.01);
+      }
+      if (!this.unlocked && ctx.state === "running") {
+        this.unlocked = true;
+        this.playSceneMusic(this.musicScene);
+      }
+      return ctx;
+    })();
+    const result = await this.unlockPromise;
+    this.unlockPromise = null;
+    return result;
   }
 
   beep({ frequency = 440, duration = 0.12, type = "sine", gain = 0.02, sweep = 0, when = 0 }) {
     const ctx = this.ensure();
-    if (!ctx) return;
+    if (!ctx || ctx.state !== "running" || !this.masterGain) return;
     const now = ctx.currentTime + when;
     const oscillator = ctx.createOscillator();
     const gainNode = ctx.createGain();
@@ -527,32 +599,95 @@ class SoundEngine {
     gainNode.gain.setValueAtTime(gain, now);
     gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.masterGain);
     oscillator.start(now);
     oscillator.stop(now + duration);
   }
 
+  getNoiseBuffer() {
+    const ctx = this.ensure();
+    if (!ctx || !this.masterGain) return null;
+    if (this.noiseBuffer) return this.noiseBuffer;
+    const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.8, ctx.sampleRate);
+    const channel = buffer.getChannelData(0);
+    for (let index = 0; index < channel.length; index += 1) {
+      channel[index] = (Math.random() * 2 - 1) * (1 - index / channel.length);
+    }
+    this.noiseBuffer = buffer;
+    return buffer;
+  }
+
+  noise({
+    duration = 0.12,
+    gain = 0.02,
+    when = 0,
+    filterType = "bandpass",
+    frequency = 1600,
+    q = 1.2,
+  }) {
+    const ctx = this.ensure();
+    const buffer = this.getNoiseBuffer();
+    if (!ctx || ctx.state !== "running" || !buffer || !this.masterGain) return;
+    const now = ctx.currentTime + when;
+    const source = ctx.createBufferSource();
+    const filter = ctx.createBiquadFilter();
+    const gainNode = ctx.createGain();
+    source.buffer = buffer;
+    filter.type = filterType;
+    filter.frequency.setValueAtTime(frequency, now);
+    filter.Q.value = q;
+    gainNode.gain.setValueAtTime(gain, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    source.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(this.masterGain);
+    source.start(now);
+    source.stop(now + duration);
+  }
+
+  chord({ frequencies, duration = 0.18, gain = 0.012, type = "triangle", when = 0, spread = 0.02 }) {
+    frequencies.forEach((frequency, index) => {
+      this.beep({
+        frequency,
+        duration,
+        type,
+        gain,
+        sweep: index === 0 ? -8 : 6,
+        when: when + index * spread,
+      });
+    });
+  }
+
   play(name) {
+    if (!this.unlocked) return;
     if (name === "shoot") {
-      this.beep({ frequency: 680, duration: 0.08, type: "triangle", gain: 0.03, sweep: -180 });
-      this.beep({ frequency: 930, duration: 0.04, type: "sine", gain: 0.015, sweep: -140, when: 0.01 });
+      this.beep({ frequency: 720, duration: 0.06, type: "triangle", gain: 0.024, sweep: -260 });
+      this.beep({ frequency: 1260, duration: 0.05, type: "sine", gain: 0.013, sweep: -220, when: 0.01 });
+      this.noise({ duration: 0.05, gain: 0.006, frequency: 2200, q: 2.6, when: 0.002 });
     } else if (name === "hit") {
-      this.beep({ frequency: 420, duration: 0.07, type: "square", gain: 0.018, sweep: 80 });
+      this.beep({ frequency: 330, duration: 0.07, type: "square", gain: 0.018, sweep: 50 });
+      this.noise({ duration: 0.04, gain: 0.01, frequency: 1200, q: 1.8 });
     } else if (name === "pickup") {
-      this.beep({ frequency: 640, duration: 0.08, type: "triangle", gain: 0.018, sweep: 160 });
-      this.beep({ frequency: 860, duration: 0.09, type: "sine", gain: 0.016, sweep: 80, when: 0.03 });
+      this.chord({ frequencies: [523.25, 659.25], duration: 0.11, gain: 0.013, type: "triangle" });
+      this.beep({ frequency: 987.77, duration: 0.12, type: "sine", gain: 0.012, sweep: 30, when: 0.04 });
     } else if (name === "hurt") {
-      this.beep({ frequency: 180, duration: 0.1, type: "sawtooth", gain: 0.028, sweep: -70 });
+      this.beep({ frequency: 150, duration: 0.13, type: "sawtooth", gain: 0.024, sweep: -90 });
+      this.noise({ duration: 0.08, gain: 0.016, frequency: 420, q: 0.9, filterType: "lowpass" });
     } else if (name === "stageClear") {
-      this.beep({ frequency: 520, duration: 0.14, type: "triangle", gain: 0.02, sweep: 80 });
-      this.beep({ frequency: 740, duration: 0.16, type: "triangle", gain: 0.02, sweep: 120, when: 0.08 });
+      this.chord({ frequencies: [392, 523.25, 659.25], duration: 0.18, gain: 0.012, type: "triangle" });
+      this.beep({ frequency: 783.99, duration: 0.22, type: "sine", gain: 0.01, sweep: 22, when: 0.09 });
     } else if (name === "bossEnrage") {
-      this.beep({ frequency: 120, duration: 0.22, type: "sawtooth", gain: 0.035, sweep: 40 });
-      this.beep({ frequency: 210, duration: 0.18, type: "square", gain: 0.02, sweep: -20, when: 0.05 });
+      this.beep({ frequency: 110, duration: 0.28, type: "sawtooth", gain: 0.028, sweep: 35 });
+      this.beep({ frequency: 164.81, duration: 0.22, type: "square", gain: 0.018, sweep: -12, when: 0.04 });
+      this.noise({ duration: 0.18, gain: 0.02, frequency: 280, q: 0.8, filterType: "lowpass", when: 0.01 });
     }
   }
 
   stopMusic() {
+    if (this.musicTimer) {
+      window.clearInterval(this.musicTimer);
+      this.musicTimer = 0;
+    }
     this.musicNodes.forEach(({ oscillator, gain }) => {
       gain.gain.cancelScheduledValues(0);
       gain.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.08);
@@ -563,58 +698,103 @@ class SoundEngine {
 
   setScene(scene) {
     this.musicScene = scene;
-    if (!this.ctx) return;
+    if (!this.ctx || !this.unlocked) return;
     this.playSceneMusic(scene);
   }
 
   playSceneMusic(scene) {
-    const ctx = this.ensure();
-    if (!ctx) return;
     this.stopMusic();
-    const scenes = {
-      title: [
-        { frequency: 196, type: "triangle", gain: 0.012 },
-        { frequency: 293.66, type: "sine", gain: 0.007 },
-      ],
-      "forest-trail": [
-        { frequency: 220, type: "triangle", gain: 0.01 },
-        { frequency: 329.63, type: "sine", gain: 0.005 },
-      ],
-      "lantern-ruins": [
-        { frequency: 174.61, type: "triangle", gain: 0.012 },
-        { frequency: 261.63, type: "sine", gain: 0.006 },
-      ],
-      "boss-lair": [
-        { frequency: 146.83, type: "sawtooth", gain: 0.012 },
-        { frequency: 220, type: "triangle", gain: 0.005 },
-      ],
-      victory: [
-        { frequency: 261.63, type: "triangle", gain: 0.012 },
-        { frequency: 392, type: "sine", gain: 0.007 },
-      ],
-      defeat: [
-        { frequency: 155.56, type: "triangle", gain: 0.01 },
-        { frequency: 207.65, type: "sine", gain: 0.004 },
-      ],
+    const ctx = this.ensure();
+    if (!ctx || ctx.state !== "running" || !this.masterGain) return;
+    const sceneLoops = {
+      title: {
+        tempo: 1400,
+        chords: [
+          [196, 293.66, 392],
+          [174.61, 261.63, 392],
+          [220, 329.63, 440],
+          [196, 293.66, 440],
+        ],
+        lead: [587.33, 659.25, 783.99, 659.25],
+        type: "triangle",
+      },
+      "forest-trail": {
+        tempo: 1200,
+        chords: [
+          [220, 329.63, 493.88],
+          [246.94, 369.99, 523.25],
+          [196, 293.66, 440],
+          [220, 329.63, 392],
+        ],
+        lead: [659.25, 587.33, 523.25, 587.33],
+        type: "triangle",
+      },
+      "lantern-ruins": {
+        tempo: 1180,
+        chords: [
+          [174.61, 261.63, 392],
+          [220, 329.63, 493.88],
+          [196, 293.66, 440],
+          [164.81, 246.94, 392],
+        ],
+        lead: [523.25, 659.25, 587.33, 493.88],
+        type: "triangle",
+      },
+      "boss-lair": {
+        tempo: 980,
+        chords: [
+          [146.83, 220, 329.63],
+          [164.81, 246.94, 369.99],
+          [130.81, 196, 293.66],
+          [146.83, 220, 293.66],
+        ],
+        lead: [329.63, 293.66, 261.63, 246.94],
+        type: "sawtooth",
+      },
+      victory: {
+        tempo: 1500,
+        chords: [
+          [261.63, 392, 523.25],
+          [293.66, 440, 587.33],
+          [329.63, 493.88, 659.25],
+          [392, 523.25, 783.99],
+        ],
+        lead: [783.99, 880, 987.77, 1046.5],
+        type: "triangle",
+      },
+      defeat: {
+        tempo: 1350,
+        chords: [
+          [155.56, 233.08, 311.13],
+          [146.83, 220, 293.66],
+          [130.81, 196, 261.63],
+          [138.59, 207.65, 277.18],
+        ],
+        lead: [311.13, 293.66, 261.63, 246.94],
+        type: "triangle",
+      },
     };
-    (scenes[scene] || scenes.title).forEach((layer) => {
-      const oscillator = ctx.createOscillator();
-      const gain = ctx.createGain();
-      oscillator.type = layer.type;
-      oscillator.frequency.setValueAtTime(layer.frequency, ctx.currentTime);
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(layer.gain, ctx.currentTime + 0.3);
-      oscillator.connect(gain);
-      gain.connect(ctx.destination);
-      oscillator.start();
-      this.musicNodes.push({ oscillator, gain });
-    });
+    const loop = sceneLoops[scene] || sceneLoops.title;
+    this.musicStep = 0;
+    const playBar = () => {
+      const step = this.musicStep % loop.chords.length;
+      const chord = loop.chords[step];
+      const lead = loop.lead[step % loop.lead.length];
+      this.chord({ frequencies: chord, duration: 0.52, gain: 0.007, type: loop.type });
+      this.beep({ frequency: chord[0] / 2, duration: 0.22, type: "sine", gain: 0.006, sweep: 4, when: 0.01 });
+      this.beep({ frequency: lead, duration: 0.18, type: "sine", gain: 0.0055, sweep: 12, when: 0.19 });
+      this.noise({ duration: 0.03, gain: 0.0035, frequency: 3400, q: 1.4, when: 0.6 });
+      this.musicStep += 1;
+    };
+    playBar();
+    this.musicTimer = window.setInterval(playBar, loop.tempo);
   }
 }
 
 class Renderer {
-  constructor(canvas) {
+  constructor(canvas, assets) {
     this.canvas = canvas;
+    this.assets = assets;
     this.ctx = canvas.getContext("2d");
     this.shake = 0;
     this.depthBuffer = new Float32Array(0);
@@ -676,6 +856,7 @@ class Renderer {
     floor.addColorStop(1, stagePalette.floor[1]);
     ctx.fillStyle = floor;
     ctx.fillRect(-40, halfHeight, width + 80, halfHeight + 80);
+    this.drawFloorTexture(stage, halfHeight, height);
 
     this.drawAtmosphere(game);
 
@@ -689,7 +870,7 @@ class Renderer {
       const y = halfHeight - wallHeight / 2;
       const shade = Math.max(0.24, 1 - correctedDistance / 14);
       const wallX = column * sliceWidth;
-      drawForestWallSlice(ctx, stage, ray, wallX, y, sliceWidth + 1, wallHeight, shade, game.visualStyle);
+      drawForestWallSlice(ctx, stage, ray, wallX, y, sliceWidth + 1, wallHeight, shade, game.visualStyle, this.assets);
       ctx.fillStyle = shadeColor(ray.trunkColor, Math.max(0.12, shade - 0.12));
       ctx.fillRect(wallX, y, 1, wallHeight);
     }
@@ -713,14 +894,33 @@ class Renderer {
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
 
+    const mist = ctx.createLinearGradient(0, height * 0.42, 0, height);
+    mist.addColorStop(0, "rgba(255, 240, 210, 0)");
+    mist.addColorStop(0.55, "rgba(255, 234, 198, 0.03)");
+    mist.addColorStop(1, "rgba(10, 12, 13, 0.18)");
+    ctx.fillStyle = mist;
+    ctx.fillRect(0, height * 0.34, width, height * 0.66);
+
     for (let index = 0; index < this.quality.atmosphereParticles; index += 1) {
       const x = ((index * 217 + t * 16) % (width + 160)) - 80;
-      const y = 80 + (index % 4) * 30;
-      ctx.fillStyle = "rgba(255, 239, 187, 0.08)";
+      const y = 80 + (index % 4) * 30 + Math.sin(t * 0.7 + index) * 5;
+      ctx.fillStyle = "rgba(255, 239, 187, 0.1)";
       ctx.beginPath();
       ctx.arc(x, y, 1.5 + (index % 3), 0, TAU);
       ctx.fill();
     }
+  }
+
+  drawFloorTexture(stage, halfHeight, height) {
+    const texture = this.assets?.get(`floor-${stage.key}`);
+    if (!texture) return;
+    const pattern = this.ctx.createPattern(texture, "repeat");
+    if (!pattern) return;
+    this.ctx.save();
+    this.ctx.globalAlpha = 0.18;
+    this.ctx.fillStyle = pattern;
+    this.ctx.fillRect(0, halfHeight, this.width, height - halfHeight);
+    this.ctx.restore();
   }
 
   drawSprites(game, depthBuffer, sliceWidth, rayCount) {
@@ -773,11 +973,12 @@ class Renderer {
       if (!visible) continue;
 
       if (sprite.renderType === "wolf" || sprite.renderType === "boss" || sprite.type === "boss") {
-        drawWolfSprite(ctx, sprite, left, top, size, game.visualStyle);
+        drawWolfSprite(ctx, sprite, left, top, size, game.visualStyle, this.assets);
+        drawEnemyOverlay(ctx, sprite, left, top, size);
       } else if (sprite.type === "tree" || sprite.type === "mushroom" || sprite.type === "gate" || sprite.type === "shrine") {
-        drawForestPropSprite(ctx, sprite, left, top, size, game.visualStyle);
+        drawForestPropSprite(ctx, sprite, left, top, size, game.visualStyle, this.assets);
       } else if (sprite.type === "health" || sprite.type === "spark") {
-        drawPickupSprite(ctx, sprite, left, top + size * 0.15, size * 0.55, game.visualStyle);
+        drawPickupSprite(ctx, sprite, left, top + size * 0.15, size * 0.55, game.visualStyle, this.assets);
       }
     }
   }
@@ -868,6 +1069,19 @@ class Renderer {
       ctx.fillStyle = `rgba(216, 82, 68, ${game.hurtFlash * 0.25})`;
       ctx.fillRect(0, 0, width, height);
     }
+
+    const vignette = ctx.createRadialGradient(
+      width * 0.5,
+      height * 0.52,
+      Math.min(width, height) * 0.18,
+      width * 0.5,
+      height * 0.52,
+      Math.max(width, height) * 0.74,
+    );
+    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+    vignette.addColorStop(1, "rgba(7, 8, 10, 0.22)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
   }
 
   drawWorldGuides(game) {
@@ -1050,16 +1264,22 @@ class Game {
   }
 
   bindInputs() {
+    const unlockAudio = () => {
+      this.audio.unlock();
+    };
+    window.addEventListener("pointerdown", unlockAudio, { passive: true });
+    window.addEventListener("touchstart", unlockAudio, { passive: true });
+
     window.addEventListener("keydown", (event) => {
       if (["KeyW", "KeyA", "KeyS", "KeyD", "ArrowLeft", "ArrowRight", "Space", "KeyR"].includes(event.code)) {
         event.preventDefault();
       }
+      this.audio.unlock();
       if ((event.code === "KeyP" || event.code === "Escape") && this.running) {
         this.togglePause();
         return;
       }
       if (event.code === "Space") {
-        this.audio.ensure();
         this.shoot();
       } else if (event.code === "KeyR" && this.running) {
         this.restart();
@@ -1092,7 +1312,16 @@ class Game {
     });
 
     this.renderer.canvas.addEventListener("click", () => {
-      this.audio.ensure();
+      if (!this.audio.unlocked) {
+        this.audio.unlock().then(() => {
+          if (!this.running || this.paused) return;
+          if (!this.pointerLocked && window.innerWidth > 720) {
+            this.renderer.canvas.requestPointerLock();
+          }
+          this.shoot();
+        });
+        return;
+      }
       if (!this.running || this.paused) return;
       if (!this.pointerLocked && window.innerWidth > 720) {
         this.renderer.canvas.requestPointerLock();
@@ -2203,25 +2432,65 @@ function pickWallStyle(stage, distance, x, y, visualStyle) {
     barkColor: vertical ? palette.barkA : palette.barkB,
     trunkColor: vertical ? palette.trunkA : palette.trunkB,
     leafColor: vertical ? palette.leafA : palette.leafB,
+    textureKey: `wall-${stage.key}`,
+    textureOffset: vertical ? y - Math.floor(y) : x - Math.floor(x),
   };
 }
 
-function drawForestWallSlice(ctx, stage, ray, x, y, width, height, shade, visualStyle) {
+function drawForestWallSlice(ctx, stage, ray, x, y, width, height, shade, visualStyle, assets) {
+  const texture = assets?.get(ray.textureKey);
+  if (texture) {
+    const sampleX = Math.max(0, Math.min(texture.width - 2, Math.floor(ray.textureOffset * (texture.width - 1))));
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, shade + 0.08);
+    ctx.drawImage(texture, sampleX, 0, 2, texture.height, x, y, width + 1, height);
+    ctx.fillStyle = `rgba(8, 10, 11, ${Math.max(0, 0.52 - shade * 0.34)})`;
+    ctx.fillRect(x, y, width + 1, height);
+    ctx.fillStyle = `rgba(255, 236, 188, ${Math.max(0, shade * 0.12)})`;
+    ctx.fillRect(x, y, width + 1, Math.max(1, height * 0.08));
+    ctx.restore();
+    return;
+  }
   const canopyHeight = stage.key === "boss-lair" ? height * 0.18 : height * 0.28;
   const trunkHeight = height - canopyHeight;
-  ctx.fillStyle = shadeColor(ray.trunkColor, shade);
+  const trunkGradient = ctx.createLinearGradient(x, y, x, y + height);
+  trunkGradient.addColorStop(0, shadeColor(ray.trunkColor, Math.min(1.08, shade * 1.08)));
+  trunkGradient.addColorStop(0.55, shadeColor(ray.trunkColor, shade));
+  trunkGradient.addColorStop(1, shadeColor(ray.barkColor, Math.max(0.18, shade * 0.56)));
+  ctx.fillStyle = trunkGradient;
   ctx.fillRect(x, y + canopyHeight * 0.2, width, trunkHeight);
   ctx.fillStyle = shadeColor(ray.barkColor, shade * 0.92);
   ctx.fillRect(x + width * 0.18, y + canopyHeight * 0.22, Math.max(1, width * 0.24), trunkHeight);
-  ctx.fillStyle = shadeColor(ray.leafColor, Math.min(1, shade * 1.08));
+  const canopyGradient = ctx.createLinearGradient(x, y, x, y + canopyHeight);
+  canopyGradient.addColorStop(0, shadeColor(ray.leafColor, Math.min(1.2, shade * 1.22)));
+  canopyGradient.addColorStop(1, shadeColor(ray.leafColor, Math.min(1, shade * 0.82)));
+  ctx.fillStyle = canopyGradient;
   ctx.fillRect(x, y, width, canopyHeight);
   ctx.fillStyle = shadeColor(ray.leafColor, Math.min(1, shade * 1.18));
   ctx.fillRect(x, y + canopyHeight * 0.18, width, canopyHeight * 0.18);
-  ctx.fillStyle = visualStyle.sparkle;
+  ctx.fillStyle = visualStyle.sparkle.replace(/0\.(\d+)/, "0.14");
   ctx.fillRect(x, y + canopyHeight * 0.08, width, Math.max(1, canopyHeight * 0.06));
+  ctx.fillStyle = "rgba(255, 229, 172, 0.08)";
+  ctx.fillRect(x, y + canopyHeight * 0.28, width, Math.max(1, height * 0.03));
+  ctx.fillStyle = "rgba(19, 14, 12, 0.16)";
+  ctx.fillRect(x + width * 0.76, y, Math.max(1, width * 0.2), height);
 }
 
-function drawWolfSprite(ctx, sprite, left, top, size, visualStyle) {
+function drawWolfSprite(ctx, sprite, left, top, size, visualStyle, assets) {
+  const assetKey =
+    sprite.renderType === "boss" ? "boss" : sprite.archetype === "wolf_brute" ? "wolf_brute" : "wolf";
+  const image = assets?.get(assetKey);
+  if (image) {
+    ctx.save();
+    ctx.globalAlpha = sprite.hitTimer > 0 ? 0.96 : 1;
+    ctx.drawImage(image, left, top - size * 0.02, size, size);
+    if (sprite.hitTimer > 0) {
+      ctx.fillStyle = "rgba(255, 232, 172, 0.18)";
+      ctx.fillRect(left, top, size, size);
+    }
+    ctx.restore();
+    return;
+  }
   const isBoss = sprite.renderType === "boss";
   const isBrute = sprite.archetype === "wolf_brute";
   const bodyColor = isBoss ? visualStyle.wolf.bossBody : isBrute ? visualStyle.wolf.bruteBody : visualStyle.wolf.body;
@@ -2231,14 +2500,21 @@ function drawWolfSprite(ctx, sprite, left, top, size, visualStyle) {
 
   ctx.save();
   ctx.translate(left, top);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+  ctx.beginPath();
+  ctx.ellipse(size * 0.5, size * 0.78, size * 0.2, size * 0.07, 0, 0, TAU);
+  ctx.fill();
   ctx.fillStyle = glow;
   ctx.beginPath();
   ctx.ellipse(size * 0.5, size * 0.62, size * 0.22, size * 0.09, 0, 0, TAU);
   ctx.fill();
+  ctx.strokeStyle = "rgba(34, 25, 23, 0.45)";
+  ctx.lineWidth = Math.max(1.5, size * 0.018);
   ctx.fillStyle = bodyColor;
   ctx.beginPath();
   ctx.ellipse(size * 0.5, size * 0.56, size * (isBrute ? 0.21 : 0.18), size * (isBrute ? 0.27 : 0.23), 0, 0, TAU);
   ctx.fill();
+  ctx.stroke();
 
   ctx.beginPath();
   ctx.moveTo(size * 0.31, size * 0.27);
@@ -2257,9 +2533,14 @@ function drawWolfSprite(ctx, sprite, left, top, size, visualStyle) {
   ctx.beginPath();
   ctx.arc(size * 0.5, size * 0.3, size * 0.18, 0, TAU);
   ctx.fill();
+  ctx.stroke();
   ctx.fillStyle = maneColor;
   ctx.beginPath();
   ctx.arc(size * 0.5, size * 0.3, size * 0.1, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255, 240, 213, 0.18)";
+  ctx.beginPath();
+  ctx.ellipse(size * 0.47, size * 0.24, size * 0.06, size * 0.03, -0.3, 0, TAU);
   ctx.fill();
   ctx.fillStyle = eyeColor;
   ctx.beginPath();
@@ -2276,30 +2557,59 @@ function drawWolfSprite(ctx, sprite, left, top, size, visualStyle) {
   ctx.moveTo(size * 0.47, size * 0.36);
   ctx.quadraticCurveTo(size * 0.5, size * 0.38, size * 0.53, size * 0.36);
   ctx.stroke();
+  ctx.strokeStyle = "rgba(37, 28, 25, 0.65)";
+  ctx.lineWidth = Math.max(1, size * 0.012);
+  [
+    [0.37, 0.66],
+    [0.46, 0.68],
+    [0.55, 0.68],
+    [0.64, 0.66],
+  ].forEach(([legX, legY]) => {
+    ctx.beginPath();
+    ctx.moveTo(size * legX, size * legY);
+    ctx.lineTo(size * legX, size * 0.9);
+    ctx.stroke();
+  });
 
   if (isBoss) {
     ctx.fillStyle = "rgba(255, 211, 141, 0.2)";
     ctx.fillRect(size * 0.22, size * 0.03, size * 0.56, size * 0.08);
+    ctx.strokeStyle = "rgba(255, 214, 151, 0.5)";
+    ctx.lineWidth = Math.max(1, size * 0.01);
+    ctx.strokeRect(size * 0.22, size * 0.03, size * 0.56, size * 0.08);
   }
 
   ctx.restore();
 }
 
-function drawPickupSprite(ctx, sprite, left, top, size, visualStyle) {
+function drawPickupSprite(ctx, sprite, left, top, size, visualStyle, assets) {
+  const image = assets?.get(sprite.type);
+  if (image) {
+    ctx.save();
+    ctx.drawImage(image, left, top, size, size);
+    ctx.restore();
+    return;
+  }
   ctx.save();
   ctx.translate(left, top);
   if (sprite.type === "health") {
-    ctx.fillStyle = "rgba(255, 236, 201, 0.18)";
+    const glow = ctx.createRadialGradient(size * 0.5, size * 0.5, 0, size * 0.5, size * 0.5, size * 0.42);
+    glow.addColorStop(0, "rgba(255, 236, 201, 0.34)");
+    glow.addColorStop(1, "rgba(255, 236, 201, 0)");
+    ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(size * 0.5, size * 0.5, size * 0.3, 0, TAU);
+    ctx.arc(size * 0.5, size * 0.5, size * 0.42, 0, TAU);
     ctx.fill();
     ctx.fillStyle = "#f8f1de";
     ctx.fillRect(size * 0.42, size * 0.24, size * 0.16, size * 0.52);
     ctx.fillRect(size * 0.24, size * 0.42, size * 0.52, size * 0.16);
   } else {
-    ctx.fillStyle = visualStyle === VISUAL_STYLES.cartoon ? "rgba(173, 243, 255, 0.3)" : "rgba(173, 243, 255, 0.18)";
+    const glow = ctx.createRadialGradient(size * 0.5, size * 0.5, 0, size * 0.5, size * 0.5, size * 0.44);
+    glow.addColorStop(0, "rgba(173, 243, 255, 0.36)");
+    glow.addColorStop(1, "rgba(173, 243, 255, 0)");
+    ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(size * 0.5, size * 0.5, size * 0.3, 0, TAU);
+    ctx.arc(size * 0.5, size * 0.5, size * 0.44, 0, TAU);
     ctx.fill();
     ctx.fillStyle = "#8de7ff";
     ctx.beginPath();
@@ -2315,7 +2625,7 @@ function drawPickupSprite(ctx, sprite, left, top, size, visualStyle) {
   ctx.restore();
 }
 
-function drawForestPropSprite(ctx, sprite, left, top, size, visualStyle) {
+function drawForestPropSprite(ctx, sprite, left, top, size, visualStyle, assets) {
   ctx.save();
   ctx.translate(left, top);
 
@@ -2346,9 +2656,18 @@ function drawForestPropSprite(ctx, sprite, left, top, size, visualStyle) {
     ctx.closePath();
     ctx.fill();
   } else if (sprite.type === "gate") {
-    ctx.fillStyle = "rgba(255, 209, 129, 0.16)";
+    const gateImage = assets?.get("gate");
+    if (gateImage) {
+      ctx.drawImage(gateImage, 0, 0, size, size);
+      ctx.restore();
+      return;
+    }
+    const gateGlow = ctx.createRadialGradient(size * 0.5, size * 0.44, size * 0.04, size * 0.5, size * 0.44, size * 0.46);
+    gateGlow.addColorStop(0, "rgba(255, 227, 160, 0.38)");
+    gateGlow.addColorStop(1, "rgba(255, 227, 160, 0)");
+    ctx.fillStyle = gateGlow;
     ctx.beginPath();
-    ctx.ellipse(size * 0.5, size * 0.66, size * 0.28, size * 0.12, 0, 0, TAU);
+    ctx.arc(size * 0.5, size * 0.42, size * 0.38, 0, TAU);
     ctx.fill();
     ctx.strokeStyle = visualStyle.minimap.gate;
     ctx.lineWidth = Math.max(2, size * 0.02);
@@ -2361,6 +2680,12 @@ function drawForestPropSprite(ctx, sprite, left, top, size, visualStyle) {
     ctx.fillStyle = "rgba(255, 227, 160, 0.22)";
     ctx.fillRect(size * 0.34, size * 0.3, size * 0.32, size * 0.38);
   } else if (sprite.type === "shrine") {
+    const shrineImage = assets?.get(sprite.active ? "shrine-on" : "shrine-off");
+    if (shrineImage) {
+      ctx.drawImage(shrineImage, 0, 0, size, size);
+      ctx.restore();
+      return;
+    }
     ctx.fillStyle = "rgba(0, 0, 0, 0.14)";
     ctx.beginPath();
     ctx.ellipse(size * 0.5, size * 0.84, size * 0.2, size * 0.08, 0, 0, TAU);
@@ -2369,9 +2694,16 @@ function drawForestPropSprite(ctx, sprite, left, top, size, visualStyle) {
     ctx.fillRect(size * 0.34, size * 0.36, size * 0.32, size * 0.34);
     ctx.fillRect(size * 0.42, size * 0.2, size * 0.16, size * 0.18);
     if (sprite.active) {
+      const shrineGlow = ctx.createRadialGradient(size * 0.5, size * 0.22, 0, size * 0.5, size * 0.22, size * 0.24);
+      shrineGlow.addColorStop(0, visualStyle.prop.shrineGlow);
+      shrineGlow.addColorStop(1, "rgba(255, 222, 160, 0)");
+      ctx.fillStyle = shrineGlow;
+      ctx.beginPath();
+      ctx.arc(size * 0.5, size * 0.22, size * 0.24, 0, TAU);
+      ctx.fill();
       ctx.fillStyle = visualStyle.prop.shrineGlow;
       ctx.beginPath();
-      ctx.arc(size * 0.5, size * 0.22, size * 0.12, 0, TAU);
+      ctx.arc(size * 0.5, size * 0.22, size * 0.1, 0, TAU);
       ctx.fill();
     } else {
       ctx.strokeStyle = "rgba(255, 228, 170, 0.5)";
@@ -2383,6 +2715,40 @@ function drawForestPropSprite(ctx, sprite, left, top, size, visualStyle) {
   }
 
   ctx.restore();
+}
+
+function drawEnemyOverlay(ctx, sprite, left, top, size) {
+  if (!sprite.alive) return;
+  const showHealth = sprite.renderType === "boss" || sprite.hitTimer > 0 || sprite.behaviorState.mode !== "idle";
+  if (showHealth) {
+    const barWidth = size * 0.6;
+    const barHeight = Math.max(6, size * 0.05);
+    const barX = left + (size - barWidth) / 2;
+    const barY = top - barHeight - size * 0.05;
+    ctx.fillStyle = "rgba(10, 12, 13, 0.62)";
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+    ctx.fillStyle = sprite.renderType === "boss" ? "rgba(255, 212, 144, 0.95)" : "rgba(255, 244, 214, 0.92)";
+    ctx.fillRect(barX, barY, barWidth * Math.max(0, sprite.health / sprite.maxHealth), barHeight);
+    ctx.strokeStyle = "rgba(255, 233, 195, 0.3)";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(barX, barY, barWidth, barHeight);
+  }
+
+  if (sprite.archetype === "wolf_pouncer" && sprite.behaviorState.mode === "windup") {
+    const pulse = 1 + Math.sin(performance.now() * 0.025) * 0.15;
+    ctx.strokeStyle = "rgba(255, 198, 144, 0.8)";
+    ctx.lineWidth = Math.max(2, size * 0.02);
+    ctx.beginPath();
+    ctx.arc(left + size * 0.5, top + size * 0.72, size * 0.28 * pulse, 0, TAU);
+    ctx.stroke();
+  } else if (sprite.renderType === "boss" && (sprite.behaviorState.mode === "charge-windup" || sprite.behaviorState.mode === "shockwave-windup")) {
+    const pulse = 1 + Math.sin(performance.now() * 0.02) * 0.16;
+    ctx.strokeStyle = sprite.behaviorState.mode === "charge-windup" ? "rgba(255, 164, 137, 0.86)" : "rgba(255, 225, 166, 0.82)";
+    ctx.lineWidth = Math.max(3, size * 0.028);
+    ctx.beginPath();
+    ctx.arc(left + size * 0.5, top + size * 0.72, size * 0.32 * pulse, 0, TAU);
+    ctx.stroke();
+  }
 }
 
 function projectWorldToScreen(x, y, game, width, height) {
@@ -2663,7 +3029,8 @@ function createUiBindings() {
 }
 
 const canvas = document.getElementById("gameCanvas");
-const renderer = new Renderer(canvas);
+const assets = new AssetLibrary();
+const renderer = new Renderer(canvas, assets);
 const ui = createUiBindings();
 const game = new Game(renderer, ui);
 ui.onUpgradeSelect = (id) => game.chooseUpgrade(id);
@@ -2721,13 +3088,13 @@ document.querySelectorAll("[data-quality]").forEach((button) => {
   });
 });
 
-function startSelectedGame() {
+async function startSelectedGame() {
   const startButton = document.getElementById("startButtonHero");
   startButton.textContent = "Starting...";
   startButton.disabled = true;
 
   try {
-    game.audio.ensure();
+    await game.audio.unlock();
     game.setDifficulty(selectedDifficulty);
     game.setStyle(selectedStyle);
     renderer.setQuality(selectedQuality);
@@ -2815,14 +3182,14 @@ document.getElementById("resumeButton").addEventListener("click", () => {
 });
 
 document.getElementById("restartButtonPause").addEventListener("click", () => {
-  game.audio.ensure();
+  game.audio.unlock();
   game.setDifficulty(selectedDifficulty);
   game.setStyle(selectedStyle);
   game.restart();
 });
 
 document.getElementById("restartButtonEnd").addEventListener("click", () => {
-  game.audio.ensure();
+  game.audio.unlock();
   game.setDifficulty(selectedDifficulty);
   game.setStyle(selectedStyle);
   game.restart();
@@ -2841,7 +3208,12 @@ document.querySelectorAll("[data-touch]").forEach((button) => {
   const action = button.dataset.touch;
   const on = (event) => {
     event.preventDefault();
-    game.audio.ensure();
+    if (!game.audio.unlocked) {
+      game.audio.unlock().then(() => {
+        game.setTouchAction(action, true);
+      });
+      return;
+    }
     game.setTouchAction(action, true);
   };
   const off = (event) => {

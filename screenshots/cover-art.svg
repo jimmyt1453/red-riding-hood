@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 840">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#13201f"/>
+      <stop offset=".55" stop-color="#1f2e2a"/>
+      <stop offset="1" stop-color="#0d1213"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" x2="1">
+      <stop offset="0" stop-color="#ffe1a8"/>
+      <stop offset="1" stop-color="#dd8f47"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="840" fill="url(#bg)"/>
+  <circle cx="1210" cy="138" r="110" fill="rgba(255,217,144,.16)"/>
+  <circle cx="280" cy="770" r="180" fill="rgba(200,70,57,.14)"/>
+  <rect x="72" y="72" width="1456" height="696" rx="36" fill="rgba(13,19,21,.62)" stroke="rgba(248,241,222,.12)" stroke-width="2"/>
+  <text x="126" y="180" fill="#f8f1de" font-size="76" font-family="Georgia, serif" font-weight="700">RED RIDING HOOD:</text>
+  <text x="126" y="258" fill="#f8f1de" font-size="76" font-family="Georgia, serif" font-weight="700">GRANNY RESCUE</text>
+  <text x="126" y="334" fill="#dbcda8" font-size="30" font-family="Arial, sans-serif">A fairy-tale shooter with lantern shrines, boss phases, upgrades,</text>
+  <text x="126" y="374" fill="#dbcda8" font-size="30" font-family="Arial, sans-serif">records, and three storybook visual styles.</text>
+  <rect x="126" y="446" width="520" height="108" rx="26" fill="url(#gold)"/>
+  <text x="386" y="490" text-anchor="middle" fill="#22140e" font-size="18" font-family="Arial, sans-serif" letter-spacing="5">PLAY</text>
+  <text x="386" y="534" text-anchor="middle" fill="#22140e" font-size="40" font-family="Arial, sans-serif" font-weight="700">START THE RESCUE</text>
+  <g transform="translate(918 132)">
+    <rect width="516" height="178" rx="26" fill="rgba(255,255,255,.04)" stroke="rgba(255,220,163,.22)" stroke-width="2"/>
+    <text x="34" y="42" fill="#dbcda8" font-size="18" font-family="Arial, sans-serif" letter-spacing="5">CURRENT BUILD</text>
+    <text x="34" y="92" fill="#f8f1de" font-size="34" font-family="Arial, sans-serif" font-weight="700">v0.2 STORYBOOK FPS</text>
+    <text x="34" y="132" fill="#dbcda8" font-size="24" font-family="Arial, sans-serif">3 stages, 4 upgrade blessings, local records,</text>
+    <text x="34" y="164" fill="#dbcda8" font-size="24" font-family="Arial, sans-serif">balanced/performance mode, and tuned boss fights.</text>
+  </g>
+  <g transform="translate(906 372)">
+    <rect width="540" height="292" rx="28" fill="rgba(255,255,255,.04)" stroke="rgba(248,241,222,.1)" stroke-width="2"/>
+    <rect x="26" y="26" width="182" height="92" rx="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,220,163,.12)"/>
+    <text x="50" y="58" fill="#dbcda8" font-size="18" font-family="Arial, sans-serif" letter-spacing="4">STAGE</text>
+    <text x="50" y="92" fill="#f8f1de" font-size="30" font-family="Arial, sans-serif" font-weight="700">Lantern Ruins</text>
+    <rect x="224" y="26" width="130" height="92" rx="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,220,163,.12)"/>
+    <text x="248" y="58" fill="#dbcda8" font-size="18" font-family="Arial, sans-serif" letter-spacing="4">SCORE</text>
+    <text x="248" y="92" fill="#f8f1de" font-size="30" font-family="Arial, sans-serif" font-weight="700">1,280</text>
+    <rect x="370" y="26" width="144" height="92" rx="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,220,163,.12)"/>
+    <text x="394" y="58" fill="#dbcda8" font-size="18" font-family="Arial, sans-serif" letter-spacing="4">TIME</text>
+    <text x="394" y="92" fill="#f8f1de" font-size="30" font-family="Arial, sans-serif" font-weight="700">03:35</text>
+    <rect x="26" y="146" width="488" height="116" rx="22" fill="rgba(13,19,21,.6)" stroke="rgba(255,220,163,.1)"/>
+    <text x="54" y="188" fill="#dbcda8" font-size="18" font-family="Arial, sans-serif" letter-spacing="4">HIGHLIGHTS</text>
+    <text x="54" y="228" fill="#f8f1de" font-size="26" font-family="Arial, sans-serif" font-weight="700">Enemy archetypes, shrine objectives, boss phases,</text>
+    <text x="54" y="260" fill="#f8f1de" font-size="26" font-family="Arial, sans-serif" font-weight="700">record tracking, and a full end-of-run summary.</text>
+  </g>
+</svg>

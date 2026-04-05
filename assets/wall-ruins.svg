@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 256">
+  <rect width="128" height="256" fill="#8f877d"/>
+  <rect width="128" height="46" fill="#53675a"/>
+  <rect y="40" width="128" height="16" fill="#6d7f71" opacity=".72"/>
+  <g fill="none" stroke="#6d665f" stroke-width="3" opacity=".75">
+    <path d="M10 62h108"/>
+    <path d="M18 98h96"/>
+    <path d="M8 142h112"/>
+    <path d="M20 190h88"/>
+  </g>
+  <g fill="none" stroke="#5d5751" stroke-width="5" opacity=".55">
+    <path d="M28 60v196"/>
+    <path d="M66 56v200"/>
+    <path d="M100 60v196"/>
+  </g>
+  <g fill="none" stroke="#c5bbb0" stroke-width="2" opacity=".5">
+    <path d="M40 118c18-18 30-10 22 12"/>
+    <path d="M78 152c20-16 30-4 16 18"/>
+    <path d="M30 202c10-10 22-6 18 10"/>
+  </g>
+</svg>

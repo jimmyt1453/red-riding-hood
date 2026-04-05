@@ -2,9 +2,24 @@
 
 A kid-friendly browser FPS where Little Red moves through a fairy-tale forest, shoots sparkling magic at runaway wolves, relights ancient lantern shrines, defeats the Big Bad Wolf, and saves Granny.
 
-Repository:
+![Cover Art](./screenshots/cover-art.svg)
 
-- [https://github.com/jimmyt1453/red-riding-hood](https://github.com/jimmyt1453/red-riding-hood)
+[Repository](https://github.com/jimmyt1453/red-riding-hood)
+
+## Highlights
+
+- 3-stage fairy-tale action run with shrine objectives and a multi-phase boss
+- 3 visual styles: `Storybook Paint`, `Cartoon Action`, and `Paper Theater`
+- Between-stage blessings, local best-score tracking, and medal ranks
+- `Balanced` and `Performance` modes for smoother desktop and mobile play
+
+## Quick Start
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open `http://localhost:8000/`
 
 ## Screenshots
 
@@ -135,6 +150,10 @@ Repository:
   - best medal earned
   - total clears
 - Cleared difficulties are shown on the title screen and remain saved with `localStorage`.
+
+## Known Issues
+
+- Audio may still fail to start in some browser environments even after user interaction. The game includes Web Audio-based music and SFX, but audio playback is currently considered unreliable and should be treated as a known issue until it is validated across real browsers and devices.
 
 ## Run Locally
 

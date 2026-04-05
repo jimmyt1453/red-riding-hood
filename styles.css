@@ -7,9 +7,10 @@
   --moss: #63885c;
   --moss-deep: #2f4b38;
   --gold: #f4d188;
+  --gold-bright: #ffe4aa;
   --glow: rgba(244, 209, 136, 0.45);
-  --panel: rgba(16, 24, 25, 0.74);
-  --panel-border: rgba(248, 241, 222, 0.14);
+  --panel: rgba(13, 19, 21, 0.78);
+  --panel-border: rgba(248, 241, 222, 0.12);
   --shadow: rgba(0, 0, 0, 0.35);
 }
 
@@ -75,8 +76,8 @@ body {
 .hud-pill,
 .event-banner {
   border: 1px solid var(--panel-border);
-  box-shadow: 0 24px 70px var(--shadow);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 24px 70px var(--shadow), inset 0 1px 0 rgba(255, 245, 221, 0.05);
+  backdrop-filter: blur(14px);
 }
 
 .hero-panel,
@@ -103,9 +104,20 @@ body {
   pointer-events: none;
 }
 
+.hero-panel::after,
+.sample-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255, 229, 173, 0.05), transparent 38%, rgba(255, 255, 255, 0.02));
+}
+
 .sample-panel {
   padding: 28px;
   border-radius: 28px;
+  position: relative;
+  overflow: hidden;
 }
 
 .eyebrow,
@@ -167,7 +179,7 @@ h2 {
     linear-gradient(180deg, rgba(255, 218, 150, 0.14), rgba(255, 255, 255, 0.03)),
     rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 220, 163, 0.24);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 22px 50px rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 22px 50px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255, 224, 162, 0.05);
 }
 
 .launch-copy {
@@ -352,7 +364,7 @@ h2 {
 .difficulty {
   padding: 14px 18px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
   color: var(--ink);
   border: 1px solid rgba(255, 255, 255, 0.12);
   font-weight: 800;
@@ -422,7 +434,7 @@ h2 {
   width: 100%;
   padding: 14px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
   border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
@@ -442,7 +454,7 @@ h2 {
 
 .sample-card.selected {
   border-color: rgba(255, 211, 141, 0.5);
-  box-shadow: inset 0 0 0 1px rgba(255, 211, 141, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(255, 211, 141, 0.25), 0 18px 30px rgba(0, 0, 0, 0.16);
 }
 
 .sample-card:hover,
@@ -870,6 +882,9 @@ h2 {
   inset: 0;
   pointer-events: none;
   padding: 18px;
+  background:
+    radial-gradient(circle at center, rgba(255, 231, 176, 0.04), transparent 24%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.12), transparent 22%, transparent 78%, rgba(0, 0, 0, 0.18));
 }
 
 .hud-top,
@@ -893,7 +908,9 @@ h2 {
 .hud-pill,
 .status-card,
 .event-banner {
-  background: var(--panel);
+  background:
+    linear-gradient(180deg, rgba(17, 24, 26, 0.86), rgba(11, 16, 18, 0.72)),
+    var(--panel);
   border-radius: 18px;
 }
 
@@ -902,6 +919,7 @@ h2 {
   display: flex;
   align-items: center;
   gap: 10px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
 }
 
 .compact-pill {
@@ -940,6 +958,7 @@ h2 {
 .status-card {
   padding: 12px 14px;
   width: min(220px, 100%);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
 }
 
 .story-note {
@@ -995,6 +1014,8 @@ h2 {
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--gold-bright);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28), 0 0 32px rgba(244, 209, 136, 0.12);
 }
 
 .crosshair {
@@ -1004,6 +1025,8 @@ h2 {
   width: 28px;
   height: 28px;
   transform: translate(-50%, -50%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(255, 234, 186, 0.16);
 }
 
 .crosshair::before,
@@ -1024,6 +1047,11 @@ h2 {
   height: 2px;
   width: 28px;
   top: 13px;
+}
+
+.crosshair::before,
+.crosshair::after {
+  opacity: 0.92;
 }
 
 .touch-controls {
